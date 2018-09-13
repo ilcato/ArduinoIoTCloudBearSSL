@@ -24,7 +24,7 @@
 
 #include <ArduinoECCX08.h>
 
-#include "ArduinoBearSSL.h"
+#include "ArduinoIoTCloudBearSSL.h"
 #include "BearSSLTrustAnchors.h"
 #include "utility/eccX08_asn1.h"
 

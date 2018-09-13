@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include "ArduinoBearSSL.h"
+#include "ArduinoIoTCloudBearSSL.h"
 
 ArduinoBearSSLClass::ArduinoBearSSLClass() :
   _onGetTimeCallback(NULL)
