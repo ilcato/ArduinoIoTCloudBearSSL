@@ -19,7 +19,7 @@
 #include <ArduinoECCX08.h>
 
 #include "ArduinoIoTCloudBearSSL.h"
-#include "BearSSLTrustAnchors.h"
+#include "prod_server_certificate.h"
 #include "utility/eccX08_asn1.h"
 
 #include "BearSSLClient.h"
@@ -160,6 +160,12 @@ BearSSLClient::operator bool()
   return (*_client);  
 }
 
+extern "C" {
+void
+arduino_client_profile(br_ssl_client_context *cc,
+	br_x509_knownkey_context *xc, br_ec_public_key *public_key);
+
+}
 void BearSSLClient::setEccSlot(int ecc508KeySlot, const byte cert[], int certLength)
 {
   // HACK: put the key slot info. in the br_ec_private_key structure
@@ -173,8 +179,12 @@ void BearSSLClient::setEccSlot(int ecc508KeySlot, const byte cert[], int certLen
 
 int BearSSLClient::connectSSL(const char* host)
 {
-  // initialize client context with all algorithms and hardcoded trust anchors
-  br_ssl_client_init_full(&_sc, &_xc, TAs, TAs_NUM);
+  // initialize client context with all algorithms and known server publick key
+  br_ec_public_key public_key;
+  public_key.curve = BR_EC_secp256r1;
+  public_key.q = (unsigned char *)TA0_EC_Q;
+  public_key.qlen = sizeof TA0_EC_Q;
+  arduino_client_profile(&_sc, &_xc, &public_key);
 
   // set the buffer in split mode
   br_ssl_engine_set_buffer(&_sc.eng, _iobuf, sizeof(_iobuf), 1);
@@ -185,8 +195,6 @@ int BearSSLClient::connectSSL(const char* host)
   if (ECCX08.begin() && ECCX08.locked() && ECCX08.random(entropy, sizeof(entropy))) {
     // ECC508 random success, add custom ECDSA vfry and EC sign
     br_ssl_engine_set_ecdsa(&_sc.eng, eccX08_vrfy_asn1);
-    br_x509_minimal_set_ecdsa(&_xc, br_ssl_engine_get_ec(&_sc.eng), br_ssl_engine_get_ecdsa(&_sc.eng));
-    
     // enable client auth using the ECCX08
     if (_ecCert.data_len && _ecKey.xlen) {
       br_ssl_client_set_single_ec(&_sc, &_ecCert, 1, &_ecKey, BR_KEYTYPE_KEYX | BR_KEYTYPE_SIGN, BR_KEYTYPE_EC, br_ec_get_default(), eccX08_sign_asn1);
@@ -201,13 +209,6 @@ int BearSSLClient::connectSSL(const char* host)
 
   // set the hostname used for SNI
   br_ssl_client_reset(&_sc, host, 0);
-
-  // get the current time and set it for X.509 validation
-  uint32_t now = ArduinoBearSSL.getTime();
-  uint32_t days = now / 86400 + 719528;
-  uint32_t sec = now % 86400;
-
-  br_x509_minimal_set_time(&_xc, days, sec);
 
   // use our own socket I/O operations
   br_sslio_init(&_ioc, &_sc.eng, BearSSLClient::clientRead, _client, BearSSLClient::clientWrite, _client);
