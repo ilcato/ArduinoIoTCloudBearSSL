@@ -19,7 +19,7 @@
 #include <ArduinoECCX08.h>
 
 #include "ArduinoIoTCloudBearSSL.h"
-#include "prod_server_certificate.h"
+#include "BearSSLServerCertificate.h"
 #include "utility/eccX08_asn1.h"
 
 #include "BearSSLClient.h"
@@ -160,12 +160,6 @@ BearSSLClient::operator bool()
   return (*_client);  
 }
 
-extern "C" {
-void
-arduino_client_profile(br_ssl_client_context *cc,
-	br_x509_knownkey_context *xc, br_ec_public_key *public_key);
-
-}
 void BearSSLClient::setEccSlot(int ecc508KeySlot, const byte cert[], int certLength)
 {
   // HACK: put the key slot info. in the br_ec_private_key structure

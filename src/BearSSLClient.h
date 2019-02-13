@@ -64,4 +64,8 @@ private:
   br_sslio_context _ioc;
 };
 
+extern "C" {
+  void arduino_client_profile(br_ssl_client_context *cc,br_x509_knownkey_context *xc, br_ec_public_key *public_key);
+}
+
 #endif
