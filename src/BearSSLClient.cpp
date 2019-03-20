@@ -171,10 +171,15 @@ void BearSSLClient::setEccSlot(int ecc508KeySlot, const byte cert[], int certLen
   _ecCert.data_len = certLength;
 }
 
+extern "C" void arduino_client_profile (br_ssl_client_context *cc,
+	br_x509_minimal_context *xc,
+	const br_x509_trust_anchor *trust_anchors, size_t trust_anchors_num);
+
 int BearSSLClient::connectSSL(const char* host)
 {
   // initialize client context with all algorithms and hardcoded trust anchors
-  br_ssl_client_init_full(&_sc, &_xc, TAs, TAs_NUM);
+//  br_ssl_client_init_full(&_sc, &_xc, TAs, TAs_NUM);
+  arduino_client_profile(&_sc, &_xc, TAs, TAs_NUM);
 
   // set the buffer in split mode
   br_ssl_engine_set_buffer(&_sc.eng, _iobuf, sizeof(_iobuf), 1);
